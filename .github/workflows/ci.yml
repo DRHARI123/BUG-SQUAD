@@ -1,0 +1,50 @@
+name: BUG SQUAD CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, dev, development ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-audit:
+    name: Backend Syntax & Health Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Verify Backend Syntax
+        working-directory: ./backend
+        run: node --check server.js controllers/*.js models/*.js routes/*.js middleware/*.js
+
+  frontend-build:
+    name: Frontend Production Build Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run Vite Production Build
+        working-directory: ./frontend
+        run: npm run build
