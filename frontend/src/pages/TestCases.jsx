@@ -102,9 +102,9 @@ const TestCases = () => {
           userService.getUsers(),
           scenarioService.getScenarios(),
         ]);
-        setProjectsList(pData);
-        setUsersList(uData);
-        setScenariosList(scnData);
+        setProjectsList(Array.isArray(pData) ? pData : (pData?.projects || []));
+        setUsersList(Array.isArray(uData) ? uData : (uData?.users || []));
+        setScenariosList(Array.isArray(scnData) ? scnData : (scnData?.scenarios || []));
       } catch (err) {
         console.error('Failed to load metadata:', err);
       }

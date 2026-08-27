@@ -124,8 +124,8 @@ const ReportBug = () => {
           projectService.getProjects(),
           userService.getUsers(),
         ]);
-        setProjects(pData);
-        setUsers(uData);
+        setProjects(Array.isArray(pData) ? pData : (pData?.projects || []));
+        setUsers(Array.isArray(uData) ? uData : (uData?.users || []));
       } catch (err) {
         console.error('Failed to load initial data for bug report:', err);
       }
@@ -143,7 +143,7 @@ const ReportBug = () => {
       try {
         setLoadingModules(true);
         const mData = await moduleService.getModules(formData.project);
-        setModules(mData);
+        setModules(Array.isArray(mData) ? mData : (mData?.modules || []));
       } catch (err) {
         console.error('Failed to load modules for project:', err);
       } finally {

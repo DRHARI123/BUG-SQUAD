@@ -260,7 +260,7 @@ const Dashboard = () => {
             Manage Projects
           </button>
           <button
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/projects', { state: { openAddModal: true } })}
             className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white rounded-lg text-xs font-semibold shadow-glow-red flex items-center gap-1.5 transition-all"
           >
             <Plus className="w-4 h-4" /> Create Project

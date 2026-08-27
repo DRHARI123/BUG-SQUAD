@@ -8,6 +8,36 @@ const User = require('../models/User');
 const { callAIModel } = require('../utils/aiProvider');
 const mongoose = require('mongoose');
 
+const getDateFilter = (dateRange) => {
+  if (!dateRange || dateRange === 'All Time') return null;
+  const now = new Date();
+  let start = new Date();
+
+  switch (dateRange) {
+    case 'Today':
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'Last 7 Days':
+      start.setDate(now.getDate() - 7);
+      break;
+    case 'Last 30 Days':
+      start.setDate(now.getDate() - 30);
+      break;
+    case 'Last 90 Days':
+      start.setDate(now.getDate() - 90);
+      break;
+    case 'This Month':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'This Year':
+      start = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      return null;
+  }
+  return { $gte: start };
+};
+
 /**
  * @desc    Get High-level Analytics Overview
  * @route   GET /api/analytics/overview
@@ -15,11 +45,14 @@ const mongoose = require('mongoose');
  */
 const getOverviewAnalytics = async (req, res) => {
   try {
-    const { project } = req.query;
+    const { project, dateRange } = req.query;
 
     if (mongoose.connection.readyState === 1) {
       let filter = {};
       if (project && mongoose.Types.ObjectId.isValid(project)) filter.project = project;
+
+      const dateGte = getDateFilter(dateRange);
+      if (dateGte) filter.createdAt = dateGte;
 
       const [totalProjects, activeProjects, totalBugs, openBugs, closedBugs, criticalBugs, blockerBugs, totalTestCases, passedTests, failedTests, blockedTests, totalReqs, coveredReqs, openReleases, activeTestRuns] = await Promise.all([
         Project.countDocuments(),
@@ -40,7 +73,7 @@ const getOverviewAnalytics = async (req, res) => {
       ]);
 
       const executedCount = passedTests + failedTests + blockedTests;
-      const passRate = executedCount > 0 ? ((passedTestCases / executedCount) * 100).toFixed(1) : '0.0';
+      const passRate = executedCount > 0 ? ((passedTests / executedCount) * 100).toFixed(1) : '0.0';
       const reqCoverage = totalReqs > 0 ? ((coveredReqs / totalReqs) * 100).toFixed(1) : '0.0';
 
       return res.json({
@@ -93,11 +126,14 @@ const getOverviewAnalytics = async (req, res) => {
  */
 const getBugAnalytics = async (req, res) => {
   try {
-    const { project } = req.query;
+    const { project, dateRange } = req.query;
 
     if (mongoose.connection.readyState === 1) {
       let filter = {};
       if (project && mongoose.Types.ObjectId.isValid(project)) filter.project = project;
+
+      const dateGte = getDateFilter(dateRange);
+      if (dateGte) filter.createdAt = dateGte;
 
       const bugs = await Bug.find(filter).populate('assignedTo', 'name').populate('reporter', 'name');
 
@@ -174,14 +210,24 @@ const getBugAnalytics = async (req, res) => {
  */
 const getTeamAnalytics = async (req, res) => {
   try {
+    const { project } = req.query;
+
     if (mongoose.connection.readyState === 1) {
       const users = await User.find({ status: 'Active' }).select('name email role department');
 
       const workload = await Promise.all(
         users.map(async (u) => {
-          const openBugs = await Bug.countDocuments({ assignedTo: u._id, status: { $in: ['New', 'Assigned', 'In Progress', 'Reopened'] } });
-          const resolvedBugs = await Bug.countDocuments({ assignedTo: u._id, status: { $in: ['Fixed', 'Closed'] } });
-          const executedTests = await TestCase.countDocuments({ tester: u._id, status: { $ne: 'Not Run' } });
+          let bugFilter = { assignedTo: u._id };
+          let tcFilter = { tester: u._id, status: { $ne: 'Not Run' } };
+
+          if (project && mongoose.Types.ObjectId.isValid(project)) {
+            bugFilter.project = project;
+            tcFilter.project = project;
+          }
+
+          const openBugs = await Bug.countDocuments({ ...bugFilter, status: { $in: ['New', 'Assigned', 'In Progress', 'Reopened'] } });
+          const resolvedBugs = await Bug.countDocuments({ ...bugFilter, status: { $in: ['Fixed', 'Closed'] } });
+          const executedTests = await TestCase.countDocuments(tcFilter);
 
           return {
             _id: u._id,

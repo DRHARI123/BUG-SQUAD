@@ -281,8 +281,77 @@ const getMe = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Update current user password
+ * @route   PUT /api/auth/update-password
+ * @access  Private
+ */
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Please provide current and new password' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'New password must be at least 8 characters long' });
+    }
+
+    const userId = req.user._id;
+
+    if (mongoose.connection.readyState === 1) {
+      const user = await User.findById(userId).select('+password');
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const isMatch = await user.matchPassword(currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Incorrect current password' });
+      }
+
+      user.password = newPassword;
+      await user.save();
+
+      await logAudit({
+        userId: user._id,
+        userName: user.name,
+        userRole: user.role,
+        action: 'PASSWORD_UPDATED',
+        entityType: 'User',
+        entityId: user._id.toString(),
+        description: `User '${user.name}' updated password securely`,
+      });
+
+      const token = generateToken(user._id, user.role);
+      return res.json({ message: 'Password updated successfully', token });
+    }
+
+    // In-memory fallback
+    const memUser = memoryUsers.find((u) => u._id === userId);
+    if (memUser) {
+      const bcrypt = require('bcryptjs');
+      const isMatch = await bcrypt.compare(currentPassword, memUser.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Incorrect current password' });
+      }
+      const salt = await bcrypt.genSalt(10);
+      memUser.password = await bcrypt.hash(newPassword, salt);
+      const token = generateToken(memUser._id, memUser.role);
+      return res.json({ message: 'Password updated successfully', token });
+    }
+
+    return res.json({ message: 'Password updated successfully (demo session)' });
+  } catch (error) {
+    console.error('[AUTH UPDATE PASSWORD ERROR]:', error);
+    return res.status(500).json({ message: error.message || 'Server Error' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
+  updatePassword,
 };

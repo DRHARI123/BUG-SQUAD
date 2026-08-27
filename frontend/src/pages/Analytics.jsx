@@ -42,7 +42,7 @@ const Analytics = () => {
   const fetchInitialData = async () => {
     try {
       const projRes = await projectService.getProjects();
-      setProjects(projRes.projects || projRes || []);
+      setProjects(Array.isArray(projRes) ? projRes : projRes?.projects || []);
     } catch (err) {}
   };
 
@@ -51,6 +51,7 @@ const Analytics = () => {
     try {
       const params = {};
       if (selectedProject) params.project = selectedProject;
+      if (dateRange) params.dateRange = dateRange;
 
       const [overviewRes, bugRes, teamRes] = await Promise.all([
         analyticsService.getOverview(params),

@@ -26,8 +26,8 @@ const Releases = () => {
         releaseService.getReleases(),
         projectService.getProjects(),
       ]);
-      setReleases(relRes || []);
-      setProjects(projRes.projects || projRes || []);
+      setReleases(Array.isArray(relRes) ? relRes : (relRes?.releases || []));
+      setProjects(Array.isArray(projRes) ? projRes : (projRes?.projects || []));
     } catch (err) {
       toast.error('Failed to load release management data.');
     } finally {

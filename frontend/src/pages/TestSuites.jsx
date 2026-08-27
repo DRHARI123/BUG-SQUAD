@@ -27,8 +27,8 @@ const TestSuites = () => {
         testSuiteService.getTestSuites(),
         projectService.getProjects(),
       ]);
-      setSuites(suiteRes || []);
-      setProjects(projRes.projects || projRes || []);
+      setSuites(Array.isArray(suiteRes) ? suiteRes : (suiteRes?.suites || []));
+      setProjects(Array.isArray(projRes) ? projRes : (projRes?.projects || []));
     } catch (err) {
       toast.error('Failed to load test suites.');
     } finally {

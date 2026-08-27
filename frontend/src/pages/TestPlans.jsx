@@ -28,8 +28,8 @@ const TestPlans = () => {
         testPlanService.getTestPlans(),
         projectService.getProjects(),
       ]);
-      setPlans(planRes.testPlans || planRes || []);
-      setProjects(projRes.projects || projRes || []);
+      setPlans(Array.isArray(planRes) ? planRes : (planRes?.testPlans || []));
+      setProjects(Array.isArray(projRes) ? projRes : (projRes?.projects || []));
     } catch (err) {
       toast.error('Failed to load test plans.');
     } finally {

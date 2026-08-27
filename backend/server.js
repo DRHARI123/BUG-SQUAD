@@ -67,10 +67,11 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`\n==================================================`);
-  console.log(` 🐞 BUG SQUAD Backend API running on port ${PORT}`);
+  console.log(` 🐞 BUG SQUAD Backend API running on ${HOST}:${PORT}`);
   console.log(` Phase 2 Enabled: Auth, Projects, Modules, Dashboard`);
   console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(` Health Check: http://localhost:${PORT}/api/health`);

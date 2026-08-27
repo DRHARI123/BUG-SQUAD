@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import userService from '../services/userService';
+import authService from '../services/authService';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
@@ -85,11 +86,13 @@ const ProfilePage = () => {
 
     try {
       setChangingPassword(true);
-      await userService.resetPassword(user._id, passwordForm.newPassword);
+      await authService.updatePassword(passwordForm.currentPassword, passwordForm.newPassword);
       toast.success('Password changed successfully.');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordErrors({});
     } catch (err) {
-      toast.error('Failed to change password.');
+      const msg = err.response?.data?.message || 'Failed to change password.';
+      toast.error(msg);
     } finally {
       setChangingPassword(false);
     }

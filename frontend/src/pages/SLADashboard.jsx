@@ -21,17 +21,18 @@ const SLADashboard = () => {
   const fetchInitialData = async () => {
     try {
       const projRes = await projectService.getProjects();
-      setProjects(projRes.projects || projRes || []);
+      setProjects(Array.isArray(projRes) ? projRes : projRes?.projects || []);
     } catch (err) {}
   };
 
-  const fetchSLADashboard = async () => {
+  const fetchSLADashboard = async (isManual = false) => {
     setLoading(true);
     try {
       const params = {};
       if (selectedProject) params.project = selectedProject;
       const res = await slaService.getSLADashboard(params);
       setData(res || { summary: {}, breachedList: [] });
+      if (isManual) toast.success('SLA Compliance Telemetry refreshed.');
     } catch (err) {
       toast.error('Failed to load SLA dashboard metrics.');
     } finally {
@@ -68,7 +69,7 @@ const SLADashboard = () => {
             ))}
           </select>
           <button
-            onClick={fetchSLADashboard}
+            onClick={() => fetchSLADashboard(true)}
             className="px-3.5 py-2 bg-dark-800 hover:bg-dark-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5"
           >
             <RefreshCw className="w-4 h-4" /> Refresh

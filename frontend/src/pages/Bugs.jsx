@@ -99,8 +99,8 @@ const Bugs = () => {
           projectService.getProjects(),
           userService.getUsers(),
         ]);
-        setProjectsList(pData);
-        setUsersList(uData);
+        setProjectsList(Array.isArray(pData) ? pData : (pData?.projects || []));
+        setUsersList(Array.isArray(uData) ? uData : (uData?.users || []));
       } catch (err) {
         console.error('Failed to load filter metadata:', err);
       }

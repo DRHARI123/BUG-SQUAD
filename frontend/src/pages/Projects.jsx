@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import projectService from '../services/projectService';
 import ProjectCard from '../components/projects/ProjectCard';
@@ -18,6 +19,7 @@ import {
 
 const Projects = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const canManage = user?.role === 'Admin' || user?.role === 'QA Manager';
 
   const [projects, setProjects] = useState([]);
@@ -39,7 +41,8 @@ const Projects = () => {
     try {
       setLoading(true);
       const data = await projectService.getProjects(search, statusFilter);
-      setProjects(Array.isArray(data) ? data : []);
+      const projectList = Array.isArray(data) ? data : (data?.projects || []);
+      setProjects(projectList);
     } catch (err) {
       console.error('Failed to load projects:', err);
       toast.error('Unable to fetch projects.');
@@ -51,7 +54,10 @@ const Projects = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    if (location.state?.openAddModal) {
+      setIsModalOpen(true);
+    }
+  }, [fetchProjects, location.state]);
 
   const handleOpenAddModal = () => {
     setEditingProject(null);

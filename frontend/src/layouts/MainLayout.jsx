@@ -38,6 +38,7 @@ const MainLayout = () => {
   const [profileDropdown, setProfileDropdown] = useState(false);
   const [notifDropdown, setNotifDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [topSearch, setTopSearch] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -214,14 +215,16 @@ const MainLayout = () => {
             </button>
 
             {/* Quick Search */}
-            <div className="relative hidden sm:block w-64 md:w-80">
+            <form onSubmit={handleTopSearchSubmit} className="relative hidden sm:block w-64 md:w-80">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
+                value={topSearch}
+                onChange={(e) => setTopSearch(e.target.value)}
                 placeholder="Search bugs, projects, test cases..."
                 className="w-full pl-9 pr-4 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
               />
-            </div>
+            </form>
           </div>
 
           {/* Right Action Icons & Profile */}

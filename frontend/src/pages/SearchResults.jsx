@@ -135,25 +135,103 @@ const SearchResults = () => {
             </div>
           )}
 
-          {/* Requirements Category */}
-          {results.requirements?.length > 0 && (
+          {/* Projects Category */}
+          {results.projects?.length > 0 && (
             <div className="glass-card p-5 rounded-2xl border border-dark-800 space-y-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FileCheck className="w-4 h-4 text-blue-400" /> Requirements ({results.requirements.length})
+                <Folder className="w-4 h-4 text-purple-400" /> Projects ({results.projects.length})
               </h3>
               <div className="divide-y divide-dark-800/60">
-                {results.requirements.map((r) => (
+                {results.projects.map((p) => (
                   <div
-                    key={r._id}
-                    onClick={() => navigate(`/requirements/${r._id}`)}
+                    key={p._id}
+                    onClick={() => navigate(`/projects/${p._id}`)}
                     className="py-2.5 flex items-center justify-between hover:bg-dark-800/40 px-2 rounded-lg cursor-pointer text-xs"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-red-400">{r.requirementId}</span>
-                      <span className="text-white font-medium">{r.title}</span>
+                      <span className="font-mono font-bold text-red-400">{p.projectCode}</span>
+                      <span className="text-white font-medium">{p.name}</span>
                     </div>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300 border border-dark-700">
-                      {r.status}
+                      {p.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Test Plans Category */}
+          {results.testPlans?.length > 0 && (
+            <div className="glass-card p-5 rounded-2xl border border-dark-800 space-y-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-amber-400" /> Test Plans ({results.testPlans.length})
+              </h3>
+              <div className="divide-y divide-dark-800/60">
+                {results.testPlans.map((tp) => (
+                  <div
+                    key={tp._id}
+                    onClick={() => navigate(`/test-plans/${tp._id}`)}
+                    className="py-2.5 flex items-center justify-between hover:bg-dark-800/40 px-2 rounded-lg cursor-pointer text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-red-400">{tp.testPlanId || 'TP'}</span>
+                      <span className="text-white font-medium">{tp.name}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300 border border-dark-700">
+                      {tp.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Test Runs Category */}
+          {results.testRuns?.length > 0 && (
+            <div className="glass-card p-5 rounded-2xl border border-dark-800 space-y-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <PlayCircle className="w-4 h-4 text-cyan-400" /> Test Runs ({results.testRuns.length})
+              </h3>
+              <div className="divide-y divide-dark-800/60">
+                {results.testRuns.map((tr) => (
+                  <div
+                    key={tr._id}
+                    onClick={() => navigate(`/test-runs/${tr._id}`)}
+                    className="py-2.5 flex items-center justify-between hover:bg-dark-800/40 px-2 rounded-lg cursor-pointer text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-red-400">{tr.testRunId || 'TR'}</span>
+                      <span className="text-white font-medium">{tr.name}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300 border border-dark-700">
+                      {tr.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Releases Category */}
+          {results.releases?.length > 0 && (
+            <div className="glass-card p-5 rounded-2xl border border-dark-800 space-y-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Tag className="w-4 h-4 text-emerald-400" /> Releases ({results.releases.length})
+              </h3>
+              <div className="divide-y divide-dark-800/60">
+                {results.releases.map((rel) => (
+                  <div
+                    key={rel._id}
+                    onClick={() => navigate(`/releases/${rel._id}`)}
+                    className="py-2.5 flex items-center justify-between hover:bg-dark-800/40 px-2 rounded-lg cursor-pointer text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-red-400">{rel.releaseId || rel.version}</span>
+                      <span className="text-white font-medium">{rel.name}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300 border border-dark-700">
+                      {rel.status}
                     </span>
                   </div>
                 ))}

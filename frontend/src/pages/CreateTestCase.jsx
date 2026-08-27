@@ -57,8 +57,8 @@ const CreateTestCase = () => {
           projectService.getProjects(),
           userService.getUsers(),
         ]);
-        setProjects(pData);
-        setUsers(uData);
+        setProjects(Array.isArray(pData) ? pData : (pData?.projects || []));
+        setUsers(Array.isArray(uData) ? uData : (uData?.users || []));
       } catch (err) {
         console.error('Failed to load form options:', err);
       }
@@ -77,7 +77,7 @@ const CreateTestCase = () => {
       try {
         setLoadingModules(true);
         const mData = await moduleService.getModules(formData.project);
-        setModules(mData);
+        setModules(Array.isArray(mData) ? mData : (mData?.modules || []));
       } catch (err) {
         console.error('Failed to load modules:', err);
       } finally {
@@ -97,7 +97,7 @@ const CreateTestCase = () => {
       try {
         setLoadingScenarios(true);
         const sData = await scenarioService.getScenarios(formData.project, formData.module);
-        setScenarios(sData);
+        setScenarios(Array.isArray(sData) ? sData : (sData?.scenarios || []));
       } catch (err) {
         console.error('Failed to load scenarios:', err);
       } finally {

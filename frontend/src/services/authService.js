@@ -29,6 +29,15 @@ export const authService = {
   logout: () => {
     localStorage.removeItem('bugsquad_token');
   },
+
+  // Update password
+  updatePassword: async (currentPassword, newPassword) => {
+    const response = await API.put('/auth/update-password', { currentPassword, newPassword });
+    if (response.data.token) {
+      localStorage.setItem('bugsquad_token', response.data.token);
+    }
+    return response.data;
+  },
 };
 
 export default authService;

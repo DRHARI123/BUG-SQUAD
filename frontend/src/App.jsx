@@ -126,6 +126,7 @@ function App() {
 
                 {/* Phase 9 Routes */}
                 <Route path="/test-plans" element={<TestPlans />} />
+                <Route path="/test-plan" element={<Navigate to="/test-plans" replace />} />
                 <Route path="/test-plans/new" element={<CreateTestPlan />} />
                 <Route path="/test-plans/:id" element={<TestPlanDetails />} />
                 <Route path="/test-plans/:id/edit" element={<CreateTestPlan />} />
