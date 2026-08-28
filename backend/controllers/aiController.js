@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
 // Helper: Check and update user AI usage limits
 const checkUsageLimit = async (userId) => {
   if (mongoose.connection.readyState !== 1) return true;
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) return true;
 
   const settings = (await AISettings.findOne()) || { aiEnabled: true, dailyUserLimit: 50, monthlyUserLimit: 1000 };
   if (!settings.aiEnabled) {
@@ -42,6 +43,7 @@ const checkUsageLimit = async (userId) => {
 // Helper: Log AI activity history
 const logAIHistory = async (userId, userName, feature, entityType, entityId, action, summary) => {
   if (mongoose.connection.readyState !== 1) return;
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) return;
   try {
     await AIHistory.create({
       user: userId,
@@ -403,22 +405,65 @@ const analyzeRelease = async (req, res) => {
  */
 const bugTriage = async (req, res) => {
   try {
-    await checkUsageLimit(req.user._id);
-    const openBugs = await Bug.find({ status: { $in: ['New', 'Assigned', 'In Progress'] } }).limit(10).populate('project', 'name');
+    if (req.user?._id) {
+      await checkUsageLimit(req.user._id);
+    }
 
-    const triageResults = openBugs.map((b) => ({
-      _id: b._id,
-      bugId: b.bugId,
-      title: b.title,
-      currentSeverity: b.severity,
-      suggestedSeverity: b.severity === 'Blocker' ? 'Blocker' : 'Major',
-      suggestedPriority: b.priority === 'P1 - Highest' ? 'P1 - Highest' : 'P2 - High',
-      reason: 'Automated triage evaluated step complexity and severity impact.',
-    }));
+    let openBugs = [];
+    if (mongoose.connection.readyState === 1) {
+      openBugs = await Bug.find({ status: { $in: ['New', 'Assigned', 'In Progress'] } })
+        .limit(10)
+        .populate('project', 'name');
+    } else {
+      // In-memory fallback support
+      const { memoryBugs } = require('./bugController');
+      openBugs = (memoryBugs || []).filter((b) => ['New', 'Assigned', 'In Progress'].includes(b.status)).slice(0, 10);
+    }
+
+    const triageResults = await Promise.all(
+      openBugs.map(async (b) => {
+        let suggestedSeverity = b.severity === 'Blocker' || b.severity === 'Critical' ? 'Critical' : 'Major';
+        let suggestedPriority = b.priority === 'P1 - Highest' ? 'P1 - Highest' : 'P2 - High';
+        let reason = 'Automated triage evaluated step complexity and severity impact.';
+
+        try {
+          const aiResponse = await callAIModel(
+            `Perform triage for defect: "${b.title}". Description: "${b.description || ''}". Current Severity: "${b.severity}", Priority: "${b.priority}". Suggest severity (Blocker, Critical, Major, Minor), priority (P1 - Highest, P2 - High, P3 - Medium, P4 - Low), and brief reasoning.`,
+            'BUG_TRIAGE'
+          );
+          if (aiResponse) {
+            try {
+              const parsed = JSON.parse(aiResponse);
+              if (parsed.suggestedSeverity) suggestedSeverity = parsed.suggestedSeverity;
+              if (parsed.suggestedPriority) suggestedPriority = parsed.suggestedPriority;
+              if (parsed.reasoning || parsed.reason) reason = parsed.reasoning || parsed.reason;
+            } catch (pErr) {
+              if (aiResponse.includes('Critical') || aiResponse.includes('Blocker')) suggestedSeverity = 'Critical';
+              reason = aiResponse.slice(0, 150);
+            }
+          }
+        } catch (aiErr) {}
+
+        return {
+          _id: b._id,
+          bugId: b.bugId || `BUG-${b._id}`,
+          title: b.title,
+          currentSeverity: b.severity || 'Major',
+          suggestedSeverity,
+          suggestedPriority,
+          reason,
+        };
+      })
+    );
+
+    if (req.user?._id) {
+      await logAIHistory(req.user._id, req.user.name, 'AI Automated Defect Triage', 'Bug', '', 'BUG_TRIAGE', `Triaged ${triageResults.length} open defects.`);
+    }
 
     return res.json({ triageResults });
   } catch (error) {
-    return res.status(400).json({ message: error.message || 'Unable to run bug triage.' });
+    const status = error.message.includes('limit') ? 429 : error.message.includes('disabled') ? 403 : 400;
+    return res.status(status).json({ message: error.message || 'Unable to run bug triage.' });
   }
 };
 
@@ -429,9 +474,16 @@ const bugTriage = async (req, res) => {
  */
 const getAIUsage = async (req, res) => {
   try {
-    const settings = (await AISettings.findOne()) || { dailyUserLimit: 50, monthlyUserLimit: 1000 };
-    const dateKey = new Date().toISOString().split('T')[0];
-    const usage = (await AIUsage.findOne({ user: req.user._id, dateKey })) || { dailyCount: 0, monthlyCount: 0 };
+    let settings = { dailyUserLimit: 50, monthlyUserLimit: 1000 };
+    let usage = { dailyCount: 0, monthlyCount: 0 };
+
+    if (mongoose.connection.readyState === 1) {
+      settings = (await AISettings.findOne()) || settings;
+      const dateKey = new Date().toISOString().split('T')[0];
+      if (req.user?._id && mongoose.Types.ObjectId.isValid(req.user._id)) {
+        usage = (await AIUsage.findOne({ user: req.user._id, dateKey })) || usage;
+      }
+    }
 
     return res.json({
       dailyCount: usage.dailyCount,
@@ -440,7 +492,12 @@ const getAIUsage = async (req, res) => {
       monthlyLimit: settings.monthlyUserLimit,
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to fetch AI usage.' });
+    return res.json({
+      dailyCount: 0,
+      dailyLimit: 50,
+      monthlyCount: 0,
+      monthlyLimit: 1000,
+    });
   }
 };
 
@@ -451,10 +508,13 @@ const getAIUsage = async (req, res) => {
  */
 const getAIHistory = async (req, res) => {
   try {
-    const history = await AIHistory.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(20);
-    return res.json(history);
+    if (mongoose.connection.readyState === 1 && req.user?._id && mongoose.Types.ObjectId.isValid(req.user._id)) {
+      const history = await AIHistory.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(20);
+      return res.json(history);
+    }
+    return res.json([]);
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to fetch AI history.' });
+    return res.json([]);
   }
 };
 

@@ -22,7 +22,8 @@ const AIBugTriage = () => {
       setTriageResults(results);
       setSelectedBugs(results.map((r) => r._id));
     } catch (err) {
-      toast.error('Failed to execute AI bug triage.');
+      const msg = err.response?.data?.message || 'Failed to execute AI bug triage.';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -58,7 +59,8 @@ const AIBugTriage = () => {
       toast.success(`Applied AI triage recommendations to ${selectedItems.length} defects!`);
       runTriage();
     } catch (err) {
-      toast.error('Failed to apply AI recommendations.');
+      const msg = err.response?.data?.message || 'Failed to apply AI recommendations.';
+      toast.error(msg);
     } finally {
       setApplying(false);
     }
