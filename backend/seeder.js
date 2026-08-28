@@ -13,15 +13,15 @@ dotenv.config();
 
 const seedDatabase = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/bugsquad';
+    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://<iamharidrin_db_user>:<qpPeT8TDuJ6Cn62Q>@<cluster>.mongodb.net/bugsquad?retryWrites=true&w=majority';
     console.log(`Connecting to MongoDB for database seeding: ${mongoUri.replace(/:([^:@]+)@/, ':****@')}`);
     await mongoose.connect(mongoUri);
 
     console.log('Clearing existing database collections & legacy indexes...');
-    try { await mongoose.connection.collection('projects').dropIndexes(); } catch (e) {}
-    try { await mongoose.connection.collection('users').dropIndexes(); } catch (e) {}
-    try { await mongoose.connection.collection('bugs').dropIndexes(); } catch (e) {}
-    try { await mongoose.connection.collection('testcases').dropIndexes(); } catch (e) {}
+    try { await mongoose.connection.collection('projects').dropIndexes(); } catch (e) { }
+    try { await mongoose.connection.collection('users').dropIndexes(); } catch (e) { }
+    try { await mongoose.connection.collection('bugs').dropIndexes(); } catch (e) { }
+    try { await mongoose.connection.collection('testcases').dropIndexes(); } catch (e) { }
 
     await Promise.all([
       User.deleteMany({}),
