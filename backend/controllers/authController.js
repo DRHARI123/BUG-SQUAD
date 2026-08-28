@@ -180,6 +180,30 @@ const loginUser = async (req, res) => {
     // 3. Fallback Demo Users (Admin, QA Manager, Tester, Developer) for quick UI testing
     const demoAccounts = [
       {
+        email: 'admin@bugsquad.demo',
+        pass: 'demo1234',
+        name: 'Alex Rivera',
+        role: 'Admin',
+      },
+      {
+        email: 'qa@bugsquad.demo',
+        pass: 'demo1234',
+        name: 'Sarah Connor',
+        role: 'QA Manager',
+      },
+      {
+        email: 'tester@bugsquad.demo',
+        pass: 'demo1234',
+        name: 'John Doe',
+        role: 'Tester',
+      },
+      {
+        email: 'developer@bugsquad.demo',
+        pass: 'demo1234',
+        name: 'David Miller',
+        role: 'Developer',
+      },
+      {
         email: 'admin@bugsquad.qa',
         pass: 'admin123',
         name: 'Alex Rivera',
