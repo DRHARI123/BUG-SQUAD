@@ -1,13 +1,20 @@
 const BASE_URL = process.env.API_URL || 'http://localhost:5000/api';
 
-async function request(url, options = {}) {
+async function request(url, options = {}, retries = 3) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  const res = await fetch(url, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${JSON.stringify(data)}`);
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, { ...options, headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${JSON.stringify(data)}`);
+      }
+      return data;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+    }
   }
-  return data;
 }
 
 async function runTests() {

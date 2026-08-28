@@ -6,6 +6,56 @@ const mongoose = require('mongoose');
 
 // In-memory fallback store when MongoDB service is offline
 const memoryUsers = [];
+const demoAccounts = [
+  {
+    email: 'admin@bugsquad.demo',
+    pass: 'demo1234',
+    name: 'Alex Rivera',
+    role: 'Admin',
+  },
+  {
+    email: 'qa@bugsquad.demo',
+    pass: 'demo1234',
+    name: 'Sarah Connor',
+    role: 'QA Manager',
+  },
+  {
+    email: 'tester@bugsquad.demo',
+    pass: 'demo1234',
+    name: 'John Doe',
+    role: 'Tester',
+  },
+  {
+    email: 'developer@bugsquad.demo',
+    pass: 'demo1234',
+    name: 'David Miller',
+    role: 'Developer',
+  },
+  {
+    email: 'admin@bugsquad.qa',
+    pass: 'admin123',
+    name: 'Alex Rivera',
+    role: 'Admin',
+  },
+  {
+    email: 'qa@bugsquad.qa',
+    pass: 'qa123456',
+    name: 'Sarah Connor',
+    role: 'QA Manager',
+  },
+  {
+    email: 'tester@bugsquad.qa',
+    pass: 'tester123',
+    name: 'John Doe',
+    role: 'Tester',
+  },
+  {
+    email: 'dev@bugsquad.qa',
+    pass: 'dev123456',
+    name: 'David Miller',
+    role: 'Developer',
+  },
+];
 
 /**
  * @desc    Register a new user
@@ -178,57 +228,6 @@ const loginUser = async (req, res) => {
     }
 
     // 3. Fallback Demo Users (Admin, QA Manager, Tester, Developer) for quick UI testing
-    const demoAccounts = [
-      {
-        email: 'admin@bugsquad.demo',
-        pass: 'demo1234',
-        name: 'Alex Rivera',
-        role: 'Admin',
-      },
-      {
-        email: 'qa@bugsquad.demo',
-        pass: 'demo1234',
-        name: 'Sarah Connor',
-        role: 'QA Manager',
-      },
-      {
-        email: 'tester@bugsquad.demo',
-        pass: 'demo1234',
-        name: 'John Doe',
-        role: 'Tester',
-      },
-      {
-        email: 'developer@bugsquad.demo',
-        pass: 'demo1234',
-        name: 'David Miller',
-        role: 'Developer',
-      },
-      {
-        email: 'admin@bugsquad.qa',
-        pass: 'admin123',
-        name: 'Alex Rivera',
-        role: 'Admin',
-      },
-      {
-        email: 'qa@bugsquad.qa',
-        pass: 'qa123456',
-        name: 'Sarah Connor',
-        role: 'QA Manager',
-      },
-      {
-        email: 'tester@bugsquad.qa',
-        pass: 'tester123',
-        name: 'John Doe',
-        role: 'Tester',
-      },
-      {
-        email: 'dev@bugsquad.qa',
-        pass: 'dev123456',
-        name: 'David Miller',
-        role: 'Developer',
-      },
-    ];
-
     const matchedDemo = demoAccounts.find(
       (d) => d.email === normalizedEmail && d.pass === password
     );
@@ -366,7 +365,22 @@ const updatePassword = async (req, res) => {
       return res.json({ message: 'Password updated successfully', token });
     }
 
-    return res.json({ message: 'Password updated successfully (demo session)' });
+    // Demo user fallback in updatePassword
+    if (typeof userId === 'string' && userId.startsWith('demo_')) {
+      const demoUser = demoAccounts.find(
+        (d) => 'demo_' + d.role.toLowerCase() === userId || 'demo_' + d.email.split('@')[0] === userId
+      );
+      if (demoUser) {
+        if (demoUser.pass !== currentPassword) {
+          return res.status(400).json({ message: 'Incorrect current password' });
+        }
+        demoUser.pass = newPassword;
+        const token = generateToken(userId, demoUser.role);
+        return res.json({ message: 'Password updated successfully', token });
+      }
+    }
+
+    return res.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error('[AUTH UPDATE PASSWORD ERROR]:', error);
     return res.status(500).json({ message: error.message || 'Server Error' });
