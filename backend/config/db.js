@@ -2,14 +2,30 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/bugsquad';
+    let mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/bugsquad';
+    if (mongoUri.includes('<cluster>') || mongoUri.includes('<iamharidrin_db_user>')) {
+      mongoUri = 'mongodb://127.0.0.1:27017/bugsquad';
+    }
     const safeUriLog = mongoUri.replace(/:([^:@]+)@/, ':****@');
     
     console.log(`[BUG SQUAD] Connecting to MongoDB: ${safeUriLog}`);
 
-    const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000,
-    });
+    let conn;
+    try {
+      conn = await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+      });
+    } catch (primaryErr) {
+      if (mongoUri !== 'mongodb://127.0.0.1:27017/bugsquad') {
+        console.warn(`[BUG SQUAD] Primary Mongo connection failed (${primaryErr.message}). Trying fallback local MongoDB...`);
+        mongoUri = 'mongodb://127.0.0.1:27017/bugsquad';
+        conn = await mongoose.connect(mongoUri, {
+          serverSelectionTimeoutMS: 5000,
+        });
+      } else {
+        throw primaryErr;
+      }
+    }
 
     console.log(`[BUG SQUAD] MongoDB Connected: ${conn.connection.host} (Database: ${conn.connection.name})`);
 

@@ -2,6 +2,7 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { logActivity } = require('../models/Activity');
 const { logAudit } = require('../models/AuditLog');
+const { memoryUsersList } = require('./userController');
 const mongoose = require('mongoose');
 
 // In-memory fallback store when MongoDB service is offline
@@ -209,11 +210,14 @@ const loginUser = async (req, res) => {
     }
 
     // 2. Check in-memory store
-    const memUser = memoryUsers.find((u) => u.email === normalizedEmail);
-    if (memUser) {
+    const memUser = (memoryUsersList && memoryUsersList.find((u) => u.email === normalizedEmail)) || memoryUsers.find((u) => u.email === normalizedEmail);
+    if (memUser && memUser.password) {
       const bcrypt = require('bcryptjs');
       const isMatch = await bcrypt.compare(password, memUser.password);
       if (isMatch) {
+        if (memUser.status === 'Inactive') {
+          return res.status(403).json({ message: 'Account deactivated. Contact system administrator.' });
+        }
         const token = generateToken(memUser._id, memUser.role);
         return res.json({
           _id: memUser._id,
@@ -221,6 +225,9 @@ const loginUser = async (req, res) => {
           email: memUser.email,
           role: memUser.role,
           status: memUser.status,
+          department: memUser.department || 'QA',
+          phone: memUser.phone || '',
+          avatar: memUser.avatar || '',
           createdAt: memUser.createdAt,
           token,
         });

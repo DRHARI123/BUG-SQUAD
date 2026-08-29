@@ -82,8 +82,9 @@ let memoryAuditLogs = [
 const logAudit = async ({ userId, userName, userRole, action, entityType, entityId, description, ipAddress }) => {
   try {
     if (mongoose.connection.readyState === 1) {
+      const validUserId = mongoose.Types.ObjectId.isValid(userId) ? userId : null;
       await AuditLog.create({
-        user: userId || null,
+        user: validUserId,
         userName: userName || 'System',
         userRole: userRole || 'System',
         action,
